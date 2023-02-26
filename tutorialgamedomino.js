@@ -57,6 +57,16 @@ function (dojo, declare) {
             }
             
             // TODO: Set up your game interface here, according to "gamedatas"
+
+            for( var i in gamedatas.board )
+            {
+                var square = gamedatas.board[i];
+                
+                if( square.player !== null )
+                {
+                    this.addTokenOnBoard( square.x, square.y, square.player );
+                }
+            }
             
  
             // Setup game notifications to handle (see "setupNotifications" method below)
@@ -157,6 +167,17 @@ function (dojo, declare) {
             script.
         
         */
+
+        addTokenOnBoard: function( x, y, player )
+        {
+            dojo.place( this.format_block( 'jstpl_token', {
+                x_y: x+'_'+y,
+                color: this.gamedatas.players[ player ].color
+            } ) , 'tokens' );
+            
+            this.placeOnObject( 'token_'+x+'_'+y, 'overall_player_board_'+player );
+            this.slideToObject( 'token_'+x+'_'+y, 'square_'+x+'_'+y ).play();
+        },
 
 
         ///////////////////////////////////////////////////

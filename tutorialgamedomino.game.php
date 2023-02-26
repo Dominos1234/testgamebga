@@ -61,7 +61,7 @@ class tutorialgamedomino extends Table
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
         $gameinfos = self::getGameinfos();
-        $default_colors = $gameinfos['player_colors'];
+        $default_colors = array( "ffffff", "000000" );
  
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
@@ -74,7 +74,6 @@ class tutorialgamedomino extends Table
         }
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
-        self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
         self::reloadPlayersBasicInfos();
         
         /************ Start the game initialization *****/
@@ -89,6 +88,24 @@ class tutorialgamedomino extends Table
 
         // TODO: setup the initial game situation here
        
+        $sql = "INSERT INTO board (board_x,board_y,board_player) VALUES ";
+        $sql_values = array();
+        list( $blackplayer_id, $whiteplayer_id ) = array_keys( $players );
+        for( $x=1; $x<=8; $x++ )
+        {
+            for( $y=1; $y<=8; $y++ )
+            {
+                $token_value = "NULL";
+                if( ($x==4 && $y==4) || ($x==5 && $y==5) )  // Initial positions of white player
+                    $token_value = "'$whiteplayer_id'";
+                else if( ($x==4 && $y==5) || ($x==5 && $y==4) )  // Initial positions of black player
+                    $token_value = "'$blackplayer_id'";
+                    
+                $sql_values[] = "('$x','$y',$token_value)";
+            }
+        }
+        $sql .= implode( ',', $sql_values );
+        self::DbQuery( $sql );
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -113,10 +130,13 @@ class tutorialgamedomino extends Table
     
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score FROM player ";
+        $sql = "SELECT player_id id, player_score score, player_color color FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
+        $result['board'] = self::getObjectListFromDB( "SELECT board_x x, board_y y, board_player player
+                                                       FROM board
+                                                       WHERE board_player IS NOT NULL" );
   
         return $result;
     }
